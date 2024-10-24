@@ -11,4 +11,4 @@ To install `photostats`, please visit the [`photostats` website](https://lachlan
 
 
 
-<p style="text-align: center;">made by [lachlan](lachlanallison.com) 🤙</p>
+<p style="text-align: center;">made by <a href="https://lachlanallison.com">lachlan</a> 🤙</p>
