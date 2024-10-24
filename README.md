@@ -7,3 +7,8 @@
 ## Installation
 
 To install `photostats`, please visit the [`photostats` website](https://lachlanallison.github.io/photostats/).
+
+
+
+
+<p style="text-align: center;">made by [lachlan](lachlanallison.com) 🤙</p>
