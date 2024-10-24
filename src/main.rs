@@ -1,11 +1,10 @@
 extern crate clap;
-// extern crate walkdir;
-// use jwalk::{WalkDir};
 use clap::Parser;
 use std::{fs};
 use std::path::{PathBuf};
 use std::time::Instant;
 use image;
+use thousands::Separable;
 
 #[derive(Parser,Default, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -41,7 +40,7 @@ const HD_PX: f64 = 2073600.0;
 fn main() {
     let now = Instant::now();
     println!(r"
-        _           _            _        _       
+         _           _            _        _       
         | |         | |          | |      | |      
    _ __ | |__   ___ | |_ ___  ___| |_ __ _| |_ ___ 
   | '_ \| '_ \ / _ \| __/ _ \/ __| __/ _` | __/ __|
@@ -53,20 +52,21 @@ fn main() {
 
     let args = Arguments::parse();
 
-    println!("Scanning {:?}", args.path);
+    println!("Scanning {}", args.path);
   
     let dir_path = PathBuf::from(args.path);
     let mut images: Vec<Img> = Vec::new();
     let mut image_totals = ImgTotals{total_pixels: 0, photocount: 0, filecount: 0, largest: String::from(""), smallest: String::from(""), widest: String::from(""), tallest: String::from("")};
 
-    // // use std read dir - to look through all files in folder
-    // // but also recurse through any folder found
-    // // and make the recursing async/concurrent??
     crawl_dir(&dir_path, &mut images, &mut image_totals);
 
-    analyse(&mut images, &mut image_totals);
+    if images.is_empty() { 
+        println!("No photos found, please run or point to a directory with photos.");
+    } else {
+        analyse(&mut images, &mut image_totals);
 
-    print_results(&image_totals);
+        print_results(&image_totals);
+    }
 
     if image_totals.photocount == 0 {
         image_totals.photocount += 1;
@@ -79,17 +79,17 @@ fn main() {
 
     fn print_results (totals: &ImgTotals) {
         let total_pixels_f = totals.total_pixels as f64;
-        println!("===== ===== ===== ===== ===== ===== ===== ===== ===== ===== =====");
-        println!("Total amount of files: {:?}", totals.filecount);
-        println!("Total amount of photos: {:?}", totals.photocount);
-        println!("Total pixels: {:?}", totals.total_pixels);
+        println!("===== ===== ===== ===== ===== ===== ===== ===== ===== ===== =====\n");
+        println!("Total amount of files: {}", totals.filecount.separate_with_commas());
+        println!("Total amount of photos: {}", totals.photocount.separate_with_commas());
+        println!("Total pixels: {}\n", totals.total_pixels.separate_with_commas());
         println!("How many Pro XDR displays does your photo collection take up: {:?}", total_pixels_f / PRO_XDR_PX);
         println!("How many 4K UHD displays does your photo collection take up: {:?}", total_pixels_f / UHD_PX);
-        println!("How many Full HD displays does your photo collection take up: {:?}", total_pixels_f / HD_PX);
-        println!("Largest photo is: {:?}", totals.largest);
-        println!("Smallest photo is: {:?}", totals.smallest);
-        println!("Widest photo is: {:?}", totals.widest);
-        println!("Tallest photo is: {:?}", totals.tallest);
+        println!("How many Full HD displays does your photo collection take up: {:?}\n", total_pixels_f / HD_PX);
+        println!("Largest photo is: {}", totals.largest);
+        println!("Smallest photo is: {}", totals.smallest);
+        println!("Widest photo is: {}", totals.widest);
+        println!("Tallest photo is: {}\n", totals.tallest);
     }
 
     fn analyse(images: &mut Vec<Img>, totals: &mut ImgTotals) {
@@ -124,25 +124,13 @@ fn main() {
     }
 
     fn crawl_dir (folder: &PathBuf, images: &mut Vec<Img>, totals: &mut ImgTotals)  {
-        // let mut images: Vec<Img> = Vec::new();
-
-        // for entry in WalkDir::new(&folder) {
-        //     if let Ok(entry) = entry {
-        //         // println!("{}", entry.path().display());
-        //         match entry.path().extension().and_then(ffi::OsStr::to_str) {
-        //             Some("png" | "JPG") => images.push(image_process(&entry.path(), totals)),
-        //             _ => println!("not an image: {:?}", entry.path()),
-        //         }
-        //     }
-        // }
-
         if let Ok(entries) = fs::read_dir(&folder) {
             for entry in entries {
                 if let Ok(entry) = entry {
     
                     // check if entry is a file
                     let metadata = fs::metadata(entry.path()).unwrap();
-    
+
                     if metadata.file_type().is_file() {
     
                         // skip hidden files
@@ -150,8 +138,10 @@ fn main() {
                             continue
                         }
                         // check if file has an image extension
-                        match entry.path().extension().expect("File error when checking extension.").to_ascii_lowercase().to_str() {
-                            Some("png" | "jpg" | "jpeg" | "webp" | "gif" | "tif" | "tiff" | "bmp") => images.push(image_process(&entry.path(), totals)),
+                        match entry.path().extension().and_then(|ext| ext.to_str().map(|s| s.to_ascii_lowercase())) {
+                            Some(ext) if matches!(ext.as_str(), "png" | "jpg" | "jpeg" | "webp" | "gif" | "tif" | "tiff" | "bmp") => {
+                                images.push(image_process(&entry.path(), totals));
+                            }
                             _ => (),
                         }
                         
@@ -159,7 +149,6 @@ fn main() {
     
                     } else {
                         // recurse through next folder
-                        // println!("folda, crawlin deepa");
                         crawl_dir(&entry.path(), images, totals);
                     }
                 }
