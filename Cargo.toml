@@ -1,6 +1,6 @@
 [package]
 name = "photostats"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["la"]
 edition = "2021"
 repository = "https://github.com/lachlanallison/photostats"
@@ -19,6 +19,9 @@ image = "0.24.8"
 color-eyre = "0.6.2"
 rstest = "0.18.2"
 thousands = "0.2.0"
+
+[dev-dependencies]
+tempfile = "3.2"
 
 [lints.rust]
 unsafe_code = "forbid"
